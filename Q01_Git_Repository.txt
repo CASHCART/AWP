@@ -1,0 +1,29 @@
+1. Git Repository
+
+Git tracks source-code changes; GitHub hosts Git repositories online.
+Use Git Bash. Replace YOUR_USERNAME with your GitHub username and create an empty Awplab1 repository on GitHub before pushing.
+
+
+Terminal Commands
+
+```bash
+git config --global user.name "MKR"
+git config --global user.email "24B81A67D8@gmail.com"
+git config --global --list
+mkdir -p Awplab1
+cd Awplab1
+git init
+git branch -M main
+printf 'This is AWP Lab 1\n' > f1.txt
+git add .
+git commit -m "This is F1"
+git remote add origin "https://github.com/YOUR_USERNAME/Awplab1.git"
+git push -u origin main
+cd ..
+git clone "https://github.com/YOUR_USERNAME/Awplab1.git" Awplab1-clone
+cd Awplab1-clone
+printf 'Hello World\n' > Hello.txt
+git add .
+git commit -m "Adding"
+git push -u origin main
+```

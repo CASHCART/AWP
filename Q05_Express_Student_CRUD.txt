@@ -1,0 +1,90 @@
+// File: server.js
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const bp = require('body-parser');
+const app = express();
+const port = process.env.PORT || 3000;
+const dataFile = path.join(__dirname, 'students.json');
+if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, '[]');
+let stu = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+if (!Array.isArray(stu)) throw new Error('students.json must contain an array.');
+
+app.use(bp.urlencoded({ extended: true }));
+app.use(bp.json());
+
+app.get('/', (req, res) => {
+    res.send('<h3>Welcome to REST API</h3>');
+});
+
+app.get('/list', (req, res) => {
+    res.json(stu);
+});
+
+app.post('/', (req, res) => {
+    const newstu = req.body;
+    if (!newstu || !String(newstu.roll ?? '').trim() || !String(newstu.name ?? '').trim()) {
+        return res.status(400).send('Roll and name are required');
+    }
+    if (stu.some(s => String(s.roll) === String(newstu.roll))) {
+        return res.status(409).send('Roll number already exists');
+    }
+    mywrite([...stu, newstu]);
+    res.status(201).send('Inserted');
+});
+
+app.put('/', (req, res) => {
+    const upstu = req.body;
+    if (!upstu || !String(upstu.roll ?? '').trim()) {
+        return res.status(400).send('Roll is required');
+    }
+    const index = stu.findIndex(s => String(s.roll) === String(upstu.roll));
+    if (index === -1) return res.status(404).send('Student not found');
+    const data = stu.map((s, i) => i === index ? { ...s, ...upstu } : s);
+    mywrite(data);
+    res.send('Updated successfully');
+});
+
+app.delete('/', (req, res) => {
+    const delstu = req.body;
+    if (!delstu || !String(delstu.roll ?? '').trim()) {
+        return res.status(400).send('Roll is required');
+    }
+    const data = stu.filter(s => String(s.roll) !== String(delstu.roll));
+    if (data.length === stu.length) return res.status(404).send('Student not found');
+    mywrite(data);
+    res.send('Deleted successfully');
+});
+
+app.use((req, res) => {
+    res.status(404).send('Route not found');
+});
+
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(err.status || 500).send('Unable to process request');
+});
+
+function mywrite(data) {
+    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+    stu = data;
+}
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
+
+Terminal Commands
+
+```bash
+mkdir express-student-crud
+cd express-student-crud
+npm init -y
+npm install express body-parser
+```
+
+Save the code as server.js in this folder. The program creates students.json automatically. Start the server, then open http://localhost:3000; use Ctrl+C to stop it. Send student fields as JSON or URL-encoded form data to /; GET /list displays records.
+
+```bash
+node server.js
+```

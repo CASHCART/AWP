@@ -1,0 +1,91 @@
+// File: server.js
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { URL } = require('url');
+const port = process.env.PORT || 3000;
+const dataFile = path.join(__dirname, 'students.json');
+if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, '[]');
+let stu = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+if (!Array.isArray(stu)) throw new Error('students.json must contain an array.');
+
+function mywrite(data) {
+    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+    stu = data;
+}
+
+const server = http.createServer(function(req, res) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    try {
+        const requestURL = new URL(req.url, 'http://localhost');
+        const route = requestURL.pathname;
+        const student = Object.fromEntries(requestURL.searchParams);
+
+        if (req.method === 'GET' && route === '/') {
+            return res.end('<h1>Welcome to REST API SERVER</h1>');
+        }
+        if (req.method === 'GET' && route === '/list') {
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify(stu));
+        }
+        if (route !== '/') {
+            res.statusCode = 404;
+            return res.end('Route not found');
+        }
+        if (req.method === 'POST') {
+            if (!student.roll || !student.name) {
+                res.statusCode = 400;
+                return res.end('Roll and name are required');
+            }
+            if (stu.some(s => String(s.roll) === student.roll)) {
+                res.statusCode = 409;
+                return res.end('Roll number already exists');
+            }
+            mywrite([...stu, student]);
+            res.statusCode = 201;
+            return res.end('<h1>Student Record Inserted</h1>');
+        }
+        if (req.method === 'PUT' || req.method === 'DELETE') {
+            if (!student.roll) {
+                res.statusCode = 400;
+                return res.end('Roll is required');
+            }
+            const index = stu.findIndex(s => String(s.roll) === student.roll);
+            if (index === -1) {
+                res.statusCode = 404;
+                return res.end('Student not found');
+            }
+            if (req.method === 'PUT') {
+                const data = stu.map((s, i) => i === index ? { ...s, ...student } : s);
+                mywrite(data);
+                return res.end('<h1>Student Data Updated Successfully</h1>');
+            }
+            mywrite(stu.filter((s, i) => i !== index));
+            return res.end('<h1>Successfully deleted</h1>');
+        }
+        res.statusCode = 405;
+        res.setHeader('Allow', 'GET, POST, PUT, DELETE');
+        res.end('Method not allowed');
+    } catch (err) {
+        console.error(err);
+        res.statusCode = 500;
+        res.end('Unable to process student data');
+    }
+});
+
+server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
+
+Terminal Commands
+
+```bash
+mkdir rest-api-crud
+cd rest-api-crud
+```
+
+Save the code as server.js in this folder. The program creates students.json automatically. Start the server, then open http://localhost:3000; use Ctrl+C to stop it. Send POST, PUT and DELETE requests to / with student fields in the query string; GET /list displays records.
+
+```bash
+node server.js
+```

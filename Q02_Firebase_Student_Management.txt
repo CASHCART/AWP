@@ -1,0 +1,126 @@
+2. Firebase Student Management
+
+Firebase provides backend services; Realtime Database stores and synchronizes JSON data.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Database</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; max-width: 300px; }
+        input, button { display: block; width: 100%; margin: 8px 0; padding: 6px; }
+        #d { white-space: pre-line; margin-top: 15px; padding: 10px; border: 1px solid; background: white; }
+    </style>
+</head>
+<body>
+    <h2>Student Database</h2>
+    <input type="text" id="roll" placeholder="Roll Number">
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="br" placeholder="Branch">
+    <input type="text" id="yr" placeholder="Year">
+    <input type="text" id="cg" placeholder="CGPA">
+
+    <button id="b1">Insert</button>
+    <button id="b2">Delete</button>
+    <button id="b3">Update</button>
+    <button id="b4">Display</button>
+
+    <h3>Output:</h3>
+    <div id="d">No data loaded.</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getDatabase, ref, set, get, update, remove, child } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "YOUR_FIREBASE_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_FIREBASE_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const dbref = getDatabase(app);
+
+        document.getElementById("b1").addEventListener("click", insertData);
+        document.getElementById("b2").addEventListener("click", deleteData);
+        document.getElementById("b3").addEventListener("click", updateData);
+        document.getElementById("b4").addEventListener("click", displayData);
+
+        function insertData() {
+            const r = document.getElementById("roll").value.trim();
+            if (!r) return alert("Enter roll number!");
+            if (/[.#$\[\]\/]/.test(r)) return alert("Roll number cannot contain . # $ [ ] or /.");
+
+            set(ref(dbref, "student/" + r), {
+                name: document.getElementById("name").value,
+                branch: document.getElementById("br").value,
+                year: document.getElementById("yr").value,
+                cgpa: document.getElementById("cg").value,
+            })
+            .then(() => alert("Inserted!"))
+            .catch(err => alert("Error:" + err.message));
+        }
+
+        function deleteData() {
+            const r = document.getElementById("roll").value.trim();
+            if (!r) return alert("Enter Roll Number!");
+            if (/[.#$\[\]\/]/.test(r)) return alert("Roll number cannot contain . # $ [ ] or /.");
+            remove(ref(dbref, "student/" + r))
+            .then(() => alert("Deleted"))
+            .catch(err => alert("Error:" + err.message));
+        }
+
+        function updateData() {
+            const r = document.getElementById("roll").value.trim();
+            if (!r) return alert("Enter Roll Number!");
+            if (/[.#$\[\]\/]/.test(r)) return alert("Roll number cannot contain . # $ [ ] or /.");
+            update(ref(dbref, "student/" + r), {
+                name: document.getElementById("name").value,
+                branch: document.getElementById("br").value,
+                year: document.getElementById("yr").value,
+                cgpa: document.getElementById("cg").value,
+            })
+            .then(() => alert("Updated!"))
+            .catch(err => alert("Error:" + err.message));
+        }
+
+        function displayData() {
+            const r = document.getElementById("roll").value.trim();
+            if (!r) return alert("Enter Roll Number!");
+            if (/[.#$\[\]\/]/.test(r)) return alert("Roll number cannot contain . # $ [ ] or /.");
+            get(child(ref(dbref), "student/" + r))
+            .then((data) => {
+                if (data.exists()) {
+                    const ob = data.val();
+                    document.getElementById("d").textContent =
+                        `Roll: ${r}\nName: ${ob.name || 'N/A'}\nBranch: ${ob.branch || 'N/A'}\nYear: ${ob.year || 'N/A'}\nCGPA: ${ob.cgpa || 'N/A'}`;
+                } else {
+                    document.getElementById("d").textContent = "Student not found.";
+                }
+            })
+            .catch(err => alert("Error:" + err.message));
+        }
+    </script>
+</body>
+</html>
+
+Terminal Commands
+
+Create a working folder:
+
+```bash
+mkdir firebase-student-management
+cd firebase-student-management
+```
+
+Save the HTML code as index.html in this folder. Create a Firebase web app and enable Realtime Database at https://console.firebase.google.com. Copy its web configuration into firebaseConfig, including the Realtime Database databaseURL. Use test-mode database rules for this lab.
+
+Start a local web server from the same folder, then open http://localhost:8080/index.html:
+
+```bash
+npx --yes http-server . -p 8080
+```
